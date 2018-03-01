@@ -112,14 +112,17 @@ defmodule ExCraft do
 
             name_string = Atom.to_string(name)
 
-            if required and not(Map.has_key?(data_source, name)) and not(Map.has_key?(data_source, name_string)) do
+            presented_in_data_source = Map.has_key?(data_source, name) or Map.has_key?(data_source, name_string)
+
+            if required and not(presented_in_data_source) do
               "#{__MODULE__} ExCraft error. Required field #{inspect field} was not provided by data source #{inspect data_source}."
               |> raise
             end
 
-            value = (Map.get(data_source, name) || Map.get(data_source, name_string) || default)
+            value = (Map.get(data_source, name) || Map.get(data_source, name_string))
                     |> case do
-                      nil -> nil
+                      nil when presented_in_data_source -> nil
+                      nil -> default
                       some when (type == :atom) ->
                         try do
                           some
