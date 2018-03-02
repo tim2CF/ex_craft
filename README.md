@@ -1,6 +1,6 @@
 # ExCraft
 
-Tool to define Elixir structures as PRO.
+Helper tool to define Elixir structures and constructors.
 
 - Gives some compile-time control of types, required and default values.
 - Generates constructor `&new/1` for your data structure.
