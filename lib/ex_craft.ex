@@ -20,56 +20,45 @@ defmodule ExCraft do
     :list,
     :tuple,
     :keyword,
+    :boolean,
   ]
 
   @doc """
 
   Macro is expanded to structure definition and constructor.
 
+  ## Usage
+
+    ```
+    defmodule ExCraft.Car do
+      import ExCraft
+      craft [
+        %{name: :brand,  type: :string,        required: false,   default: "custom"},
+        %{name: :year,   type: :pos_integer,   required: true,    default: nil},
+        %{name: :used,   type: :boolean,       required: false,   default: true},
+      ]
+    end
+    ```
+
   ## Examples
 
-      iex> %ExCraft.Test{atom: :erlang}
-      %ExCraft.Test{
-        atom: :erlang,
-        binary: "hello",
-        float: nil,
-        integer: nil,
-        keyword: nil,
-        list: nil,
-        map: nil,
-        non_neg_float: nil,
-        non_neg_integer: nil,
-        non_neg_number: nil,
-        number: nil,
-        pos_float: nil,
-        pos_integer: nil,
-        pos_number: nil,
-        string: "world",
-        struct: nil,
-        tuple: nil
-      }
-      iex> ExCraft.Test.new(%{"atom" => "erlang"})
-      %ExCraft.Test{
-        atom: :erlang,
-        binary: "hello",
-        float: nil,
-        integer: nil,
-        keyword: nil,
-        list: nil,
-        map: nil,
-        non_neg_float: nil,
-        non_neg_integer: nil,
-        non_neg_number: nil,
-        number: nil,
-        pos_float: nil,
-        pos_integer: nil,
-        pos_number: nil,
-        string: "world",
-        struct: nil,
-        tuple: nil
-      }
-      iex> ExCraft.Test.new(%{"atom" => "whoa!!!"})
-      ** (RuntimeError) Elixir.ExCraft.Test ExCraft error. Atom with name "whoa!!!" does not exist. Error in field %ExCraft.Field{default: nil, name: :atom, required: true, type: :atom} of data source %{"atom" => "whoa!!!"}.
+    ```
+    iex> alias ExCraft.Car
+    ExCraft.Car
+    iex> %Car{year: 1990}
+    %Car{brand: "custom", used: true, year: 1990}
+    iex> Car.new(%{"year" => "1990"})
+    %Car{brand: "custom", used: true, year: 1990}
+    iex> Car.new(%{year: "1990"})
+    %Car{brand: "custom", used: true, year: 1990}
+    iex> Car.new([year: "1990"])
+    %Car{brand: "custom", used: true, year: 1990}
+    iex> Car.new(%{"year" => 1990.0})
+    %Car{brand: "custom", used: true, year: 1990}
+    iex> Car.new(%{"year" => "1990.1"})
+    ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
+    ```
+
   """
 
   defmacro craft(quoted_fields = [_|_]) do
@@ -96,7 +85,7 @@ defmodule ExCraft do
     quote do
 
       @enforce_keys unquote(enforce_keys)
-      defstruct     unquote(fields_definitions)
+      defstruct     unquote(fields_definitions |> Macro.escape)
 
       def new(raw_data_source) do
 
@@ -151,9 +140,11 @@ defmodule ExCraft do
                         some
                       some when (type == :keyword) ->
                         some
+                      some when (type == :boolean) ->
+                        some |> Maybe.to_boolean
                     end
 
-            if (value != nil) and not(value |> is_type(type)) do
+            if (value != nil) and not(value |> ExCraft.is_type(type)) do
               "#{__MODULE__} ExCraft error. Type of #{inspect value} is not #{type}. Error in field #{inspect field} of data source #{inspect data_source}."
               |> raise
             end
@@ -167,6 +158,25 @@ defmodule ExCraft do
     end
 
   end
+
+  @doc """
+
+  Boolean function, checks type of first argument.
+
+  ## Examples
+
+    ```
+    iex> ExCraft.is_type("hello", :string)
+    true
+    iex> ExCraft.is_type("hello", :binary)
+    true
+    iex> ExCraft.is_type(<<200, 200, 200>>, :string)
+    false
+    iex> ExCraft.is_type(<<200, 200, 200>>, :binary)
+    true
+    ```
+
+  """
 
   def is_type(some, :atom) when is_atom(some), do: true
   def is_type(some, :binary) when is_binary(some), do: true
@@ -186,6 +196,7 @@ defmodule ExCraft do
   def is_type(some, :list) when is_list(some), do: true
   def is_type(some, :tuple) when is_tuple(some), do: true
   def is_type(some, :keyword) when is_list(some), do: Keyword.keyword?(some)
+  def is_type(some, :boolean) when is_boolean(some), do: true
   def is_type(_, type) when (type in @types), do: false
 
   defp decode_field(field = %{name: name, type: type, required: required, default: default})
