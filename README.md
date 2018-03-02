@@ -68,3 +68,8 @@ Helper tool to define Elixir structures and constructors.
   :keyword
   :boolean
   ```
+
+# TODO
+
+- add &new/1 macro that defines only constructor
+- add macro to create constructor for Ecto model
