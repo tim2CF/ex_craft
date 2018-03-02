@@ -20,6 +20,29 @@ Tool to define Elixir structures as PRO.
   end
   ```
 
+# Types
+
+  ```
+  :atom
+  :binary
+  :string
+  :number
+  :pos_number
+  :non_neg_number
+  :integer
+  :pos_integer
+  :non_neg_integer
+  :float
+  :pos_float
+  :non_neg_float
+  :struct
+  :map
+  :list
+  :tuple
+  :keyword
+  :boolean
+  ```
+
 # Examples
 
   Use structure as is, or use `&new/1` constructor to perform some
