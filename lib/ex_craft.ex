@@ -89,7 +89,7 @@ defmodule ExCraft do
 
       def new(raw_data_source) do
 
-        data_source = Maybe.to_map(raw_data_source)
+        data_source = Aspire.to_map(raw_data_source)
 
         if not(is_map(data_source)) do
           "#{__MODULE__} ExCraft error. Data source #{inspect raw_data_source} can not be converted to map."
@@ -115,7 +115,7 @@ defmodule ExCraft do
                       some when (type == :atom) ->
                         try do
                           some
-                          |> Maybe.maybe_to_string
+                          |> Aspire.to_string
                           |> String.to_existing_atom
                         rescue
                           ArgumentError ->
@@ -123,17 +123,17 @@ defmodule ExCraft do
                             |> reraise(System.stacktrace)
                         end
                       some when (type in [:binary, :string]) ->
-                        some |> Maybe.maybe_to_string
+                        some |> Aspire.to_string
                       some when (type in [:number, :pos_number, :non_neg_number]) ->
-                        some |> Maybe.to_number
+                        some |> Aspire.to_number
                       some when (type in [:integer, :pos_integer, :non_neg_integer]) ->
-                        some |> Maybe.to_integer
+                        some |> Aspire.to_integer
                       some when (type in [:float, :pos_float, :non_neg_float]) ->
-                        some |> Maybe.to_float
+                        some |> Aspire.to_float
                       some when (type == :struct) ->
                         some
                       some when (type == :map) ->
-                        some |> Maybe.to_map
+                        some |> Aspire.to_map
                       some when (type == :list) ->
                         some
                       some when (type == :tuple) ->
@@ -141,7 +141,7 @@ defmodule ExCraft do
                       some when (type == :keyword) ->
                         some
                       some when (type == :boolean) ->
-                        some |> Maybe.to_boolean
+                        some |> Aspire.to_boolean
                     end
 
             if (value != nil) and not(value |> ExCraft.is_type(type)) do

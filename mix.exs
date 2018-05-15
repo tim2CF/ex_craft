@@ -59,7 +59,7 @@ defmodule ExCraft.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:maybe, github: "timCF/maybe"},
+      {:aspire, "~> 0.1.0"},
       # development tools
       {:excoveralls, "~> 0.8", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5",    only: [:dev, :test], runtime: false},
