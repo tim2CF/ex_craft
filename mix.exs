@@ -29,8 +29,8 @@ defmodule ExCraft.MixProject do
       ],
       # ex_doc
       name:         "ExCraft",
-      source_url:   "https://github.com/tim2CF/boilex",
-      homepage_url: "https://github.com/tim2CF/boilex",
+      source_url:   "https://github.com/tim2CF/ex_craft",
+      homepage_url: "https://github.com/tim2CF/ex_craft",
       docs:         [main: "readme", extras: ["README.md"]],
       # hex.pm stuff
       description:  "Smart Elixir structures constructors",
@@ -39,7 +39,7 @@ defmodule ExCraft.MixProject do
         files: ["lib", "priv", "mix.exs", "README*", "VERSION*"],
         maintainers: ["Ilja Tkachuk aka timCF"],
         links: %{
-          "GitHub" => "https://github.com/tim2CF/boilex",
+          "GitHub" => "https://github.com/tim2CF/ex_craft",
           "Author's home page" => "https://timcf.github.io/"
         }
       ],
