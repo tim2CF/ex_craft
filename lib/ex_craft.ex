@@ -1,7 +1,5 @@
 defmodule ExCraft do
 
-  alias ExCraft.Field
-
   @types [
     :atom,
     :binary,
@@ -33,9 +31,9 @@ defmodule ExCraft do
     defmodule ExCraft.Car do
       import ExCraft
       craft [
-        %{name: :brand,  type: :string,        required: false,   default: "custom"},
-        %{name: :year,   type: :pos_integer,   required: true,    default: nil},
-        %{name: :used,   type: :boolean,       required: false,   default: true},
+        %ExCraft.Field{name: :brand,  type: :string,        required: false,   default: "custom",  enforce: false},
+        %ExCraft.Field{name: :year,   type: :pos_integer,   required: true,    default: nil,       enforce: true},
+        %ExCraft.Field{name: :used,   type: :boolean,       required: false,   default: true,      enforce: false},
       ]
     end
     ```
@@ -55,8 +53,10 @@ defmodule ExCraft do
     %Car{brand: "custom", used: true, year: 1990}
     iex> Car.new(%{"year" => 1990.0})
     %Car{brand: "custom", used: true, year: 1990}
+    iex> Car.new(%Car{brand: "custom", used: true, year: 1990})
+    %Car{brand: "custom", used: true, year: 1990}
     iex> Car.new(%{"year" => "1990.1"})
-    ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
+    ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, enforce: true, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
     ```
 
   """
@@ -73,14 +73,14 @@ defmodule ExCraft do
 
     fields_definitions =
       decoded_fields
-      |> Enum.map(fn(%Field{name: name, default: default}) ->
+      |> Enum.map(fn(%ExCraft.Field{name: name, default: default}) ->
         {name, default}
       end)
 
     enforce_keys =
       decoded_fields
-      |> Stream.filter(fn(%Field{required: required}) -> required end)
-      |> Enum.map(fn(%Field{name: name}) -> name end)
+      |> Stream.filter(fn(%ExCraft.Field{enforce: enforce}) -> enforce end)
+      |> Enum.map(fn(%ExCraft.Field{name: name}) -> name end)
 
     quote do
 
@@ -199,8 +199,8 @@ defmodule ExCraft do
   def is_type(some, :boolean) when is_boolean(some), do: true
   def is_type(_, type) when (type in @types), do: false
 
-  defp decode_field(field = %{name: name, type: type, required: required, default: default})
-          when is_atom(name) and (type in @types) and is_boolean(required) do
+  defp decode_field(field = %ExCraft.Field{name: name, type: type, required: required, default: default, enforce: enforce})
+          when is_atom(name) and (type in @types) and is_boolean(required) and is_boolean(enforce) do
 
     if (default != nil) and required do
       "#{__MODULE__}. If field is required, default value can not be specified (default should be nil). Error in field #{inspect field}"
@@ -212,11 +212,12 @@ defmodule ExCraft do
       |> raise
     end
 
-    %Field{
+    %ExCraft.Field{
       name: name,
       type: type,
       required: required,
-      default: default
+      default: default,
+      enforce: enforce
     }
   end
 

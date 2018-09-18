@@ -2,7 +2,7 @@
 
 Helper tool to define Elixir structures and constructors.
 
-- Gives some compile-time control of types, required and default values.
+- Gives some compile-time control of types, required, default and enforced values.
 - Generates constructor `&new/1` for your data structure.
 
 # Usage
@@ -13,9 +13,9 @@ Helper tool to define Elixir structures and constructors.
   defmodule ExCraft.Car do
     require ExCraft
     ExCraft.craft [
-      %{name: :brand,  type: :string,        required: false,   default: "custom"},
-      %{name: :year,   type: :pos_integer,   required: true,    default: nil},
-      %{name: :used,   type: :boolean,       required: false,   default: true},
+      %ExCraft.Field{name: :brand,  type: :string,        required: false,   default: "custom",  enforce: false},
+      %ExCraft.Field{name: :year,   type: :pos_integer,   required: true,    default: nil,       enforce: true},
+      %ExCraft.Field{name: :used,   type: :boolean,       required: false,   default: true,      enforce: false},
     ]
   end
   ```
@@ -40,8 +40,10 @@ Helper tool to define Elixir structures and constructors.
   %Car{brand: "custom", used: true, year: 1990}
   iex> Car.new(%{"year" => 1990.0})
   %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new(%Car{brand: "custom", used: true, year: 1990})
+  %Car{brand: "custom", used: true, year: 1990}
   iex> Car.new(%{"year" => "1990.1"})
-  ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
+  ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, enforce: true, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
   ```
 
 # Types
@@ -71,5 +73,6 @@ Helper tool to define Elixir structures and constructors.
 
 # TODO
 
+- add typespec generator
 - add &new/1 macro that defines only constructor
 - add macro to create constructor for Ecto model

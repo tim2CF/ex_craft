@@ -5,14 +5,14 @@ defmodule ExCraft.MixProject do
     [
       app: :ex_craft,
       version: ("VERSION" |> File.read! |> String.trim),
-      elixir: "~> 1.6",
+      elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env),
       # excoveralls
       test_coverage:      [tool: ExCoveralls],
       preferred_cli_env:  [
-        "coveralls":            :test,
+        coveralls:              :test,
         "coveralls.travis":     :test,
         "coveralls.circle":     :test,
         "coveralls.semaphore":  :test,
