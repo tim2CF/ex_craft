@@ -1,5 +1,8 @@
 # Change Log
 
+## [v0.2.1](https://github.com/tim2CF/ex_craft/tree/v0.2.1) (2018-09-18)
+[Full Changelog](https://github.com/tim2CF/ex_craft/compare/v0.2.0...v0.2.1)
+
 ## [v0.2.0](https://github.com/tim2CF/ex_craft/tree/v0.2.0) (2018-09-18)
 
 
