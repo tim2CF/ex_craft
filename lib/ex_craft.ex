@@ -22,43 +22,46 @@ defmodule ExCraft do
   ]
 
   @doc """
-
-  Macro is expanded to structure definition and constructor.
+  Macro is expanded to structure definition and constructors
 
   ## Usage
 
-    ```
-    defmodule ExCraft.Car do
-      import ExCraft
-      craft [
-        %ExCraft.Field{name: :brand,  type: :string,        required: false,   default: "custom",  enforce: false},
-        %ExCraft.Field{name: :year,   type: :pos_integer,   required: true,    default: nil,       enforce: true},
-        %ExCraft.Field{name: :used,   type: :boolean,       required: false,   default: true,      enforce: false},
-      ]
-    end
-    ```
+  ```
+  defmodule ExCraft.Car do
+    import ExCraft
+    craft [
+      %ExCraft.Field{name: :brand,  type: :string,        required: false,   default: "custom",  enforce: false},
+      %ExCraft.Field{name: :year,   type: :pos_integer,   required: true,    default: nil,       enforce: true},
+      %ExCraft.Field{name: :used,   type: :boolean,       required: false,   default: true,      enforce: false},
+    ]
+  end
+  ```
 
   ## Examples
 
-    ```
-    iex> alias ExCraft.Car
-    ExCraft.Car
-    iex> %Car{year: 1990}
-    %Car{brand: "custom", used: true, year: 1990}
-    iex> Car.new(%{"year" => "1990"})
-    %Car{brand: "custom", used: true, year: 1990}
-    iex> Car.new(%{year: "1990"})
-    %Car{brand: "custom", used: true, year: 1990}
-    iex> Car.new([year: "1990"])
-    %Car{brand: "custom", used: true, year: 1990}
-    iex> Car.new(%{"year" => 1990.0})
-    %Car{brand: "custom", used: true, year: 1990}
-    iex> Car.new(%Car{brand: "custom", used: true, year: 1990})
-    %Car{brand: "custom", used: true, year: 1990}
-    iex> Car.new(%{"year" => "1990.1"})
-    ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, enforce: true, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
-    ```
+  ```
+  iex> alias ExCraft.Car
+  ExCraft.Car
+  iex> %Car{year: 1990}
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new!(%{"year" => "1990"})
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new!(%{year: "1990"})
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new!([year: "1990"])
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new!(%{"year" => 1990.0})
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new!(%Car{brand: "custom", used: true, year: 1990})
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.new!(%{"year" => "1990.1"})
+  ** (RuntimeError) Elixir.ExCraft.Car ExCraft error. Type of "1990.1" is not pos_integer. Error in field %ExCraft.Field{default: nil, enforce: true, name: :year, required: true, type: :pos_integer} of data source %{"year" => "1990.1"}.
 
+  iex> require ExCraft.Car, as: Car
+  ExCraft.Car
+  iex> Car.struct!(year: 1990)
+  %Car{brand: "custom", used: true, year: 1990}
+  ```
   """
 
   defmacro craft(quoted_fields = [_|_]) do
@@ -87,7 +90,35 @@ defmodule ExCraft do
       @enforce_keys unquote(enforce_keys)
       defstruct     unquote(fields_definitions |> Macro.escape)
 
-      def new(raw_data_source) do
+      defmacro struct!(kv) do
+        if not Keyword.keyword?(kv) do
+          "#{__MODULE__} ExCraft error. Macro &struct!/1 can accept only keyword list."
+          |> raise
+        end
+
+        module_ast = __MODULE__
+        module_alias_ast =
+          __MODULE__
+          |> Module.split
+          |> Enum.map(&String.to_atom/1)
+
+        structure_ast = {:%, [],
+          [
+            {:__aliases__, [alias: false], module_alias_ast},
+            {:%{}, [], kv}
+          ]
+        }
+
+        quote do
+          unquote(structure_ast)
+          #
+          # TODO : optimize it, not all code from new! is actually needed here
+          #
+          |> unquote(module_ast).new!
+        end
+      end
+
+      def new!(raw_data_source) do
 
         data_source = Aspire.to_map(raw_data_source)
 
@@ -153,31 +184,38 @@ defmodule ExCraft do
 
         end)
         |> Map.put(:__struct__, __MODULE__)
+        |> validate!
       end
 
+      def validate!(data = %__MODULE__{}) do
+        data
+      end
+      def validate!(data) do
+        "#{__MODULE__} ExCraft error. Data #{inspect data} is not a %#{__MODULE__}{}."
+        |> raise
+      end
+
+      defoverridable [validate!: 1]
     end
 
   end
 
   @doc """
-
   Boolean function, checks type of first argument.
 
   ## Examples
 
-    ```
-    iex> ExCraft.is_type("hello", :string)
-    true
-    iex> ExCraft.is_type("hello", :binary)
-    true
-    iex> ExCraft.is_type(<<200, 200, 200>>, :string)
-    false
-    iex> ExCraft.is_type(<<200, 200, 200>>, :binary)
-    true
-    ```
-
+  ```
+  iex> ExCraft.is_type("hello", :string)
+  true
+  iex> ExCraft.is_type("hello", :binary)
+  true
+  iex> ExCraft.is_type(<<200, 200, 200>>, :string)
+  false
+  iex> ExCraft.is_type(<<200, 200, 200>>, :binary)
+  true
+  ```
   """
-
   def is_type(some, :atom) when is_atom(some), do: true
   def is_type(some, :binary) when is_binary(some), do: true
   def is_type(some, :string) when is_binary(some), do: String.valid?(some)
