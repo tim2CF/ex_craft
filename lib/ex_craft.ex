@@ -61,6 +61,10 @@ defmodule ExCraft do
   ExCraft.Car
   iex> Car.struct!(year: 1990)
   %Car{brand: "custom", used: true, year: 1990}
+  iex> struct = Car.struct!(year: 1990)
+  %Car{brand: "custom", used: true, year: 1990}
+  iex> Car.struct!(struct, brand: "Ford")
+  %Car{brand: "Ford", used: true, year: 1990}
   ```
   """
 
@@ -106,6 +110,34 @@ defmodule ExCraft do
           [
             {:__aliases__, [alias: false], module_alias_ast},
             {:%{}, [], kv}
+          ]
+        }
+
+        quote do
+          unquote(structure_ast)
+          #
+          # TODO : optimize it, not all code from new! is actually needed here
+          #
+          |> unquote(module_ast).new!
+        end
+      end
+
+      defmacro struct!(code, kv) do
+        if not Keyword.keyword?(kv) do
+          "#{__MODULE__} ExCraft error. Macro &struct!/2 can accept only keyword list as 2nd argument."
+          |> raise
+        end
+
+        module_ast = __MODULE__
+        module_alias_ast =
+          __MODULE__
+          |> Module.split
+          |> Enum.map(&String.to_atom/1)
+
+        structure_ast = {:%, [],
+          [
+            {:__aliases__, [alias: false], module_alias_ast},
+            {:%{}, [], [{:|, [], [code, kv]}]}
           ]
         }
 
