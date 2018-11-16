@@ -65,6 +65,8 @@ defmodule ExCraft do
   %Car{brand: "custom", used: true, year: 1990}
   iex> Car.struct!(struct, brand: "Ford")
   %Car{brand: "Ford", used: true, year: 1990}
+  iex> Car.struct!(struct, [])
+  %Car{brand: "custom", used: true, year: 1990}
   ```
   """
 
@@ -134,12 +136,21 @@ defmodule ExCraft do
           |> Module.split
           |> Enum.map(&String.to_atom/1)
 
-        structure_ast = {:%, [],
-          [
-            {:__aliases__, [alias: false], module_alias_ast},
-            {:%{}, [], [{:|, [], [code, kv]}]}
-          ]
-        }
+        structure_ast =
+          kv
+          |> case do
+            [] ->
+              code
+            [_ | _] ->
+              {
+                :%,
+                [],
+                [
+                  {:__aliases__, [alias: false], module_alias_ast},
+                  {:%{}, [], [{:|, [], [code, kv]}]}
+                ]
+              }
+          end
 
         quote do
           unquote(structure_ast)
